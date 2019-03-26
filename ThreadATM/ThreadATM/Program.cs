@@ -7,7 +7,7 @@ using System.Windows.Forms;
 namespace ThreadATM
 {
     static class Program
-    {
+    {/*
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -17,6 +17,6 @@ namespace ThreadATM
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new ATM());
-        }
+        }*/
     }
 }
