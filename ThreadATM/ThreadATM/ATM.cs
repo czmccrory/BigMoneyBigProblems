@@ -20,42 +20,44 @@ namespace ThreadATM
 
         int currentAccountNumber;
         bool AccountFound = false;
+        bool showDataRace = false;
 
         static Thread ATM1 = new Thread(new ThreadStart(CreateAndShowForm));
         static Thread ATM2 = new Thread(new ThreadStart(CreateAndShowForm));
+        static Semaphore sem = new Semaphore(1, 1);
 
         //initial screen objects
         TextBox Box = new TextBox();
         Label askUser = new Label();
         PictureBox BankGif = new PictureBox();
         Button[,] grid = new Button[3, 4];
+        CheckBox dataRaceCheck = new CheckBox();
 
         //options screen
         Button[] optionButton = new Button[3];
 
         //withdraw screen objects
         Button[,] withdrawOptions = new Button[2, 3];
-
+        
         public ATM()
         {
             //ac[0] = new Account(300, 1111, 111111);
             //ac[1] = new Account(750, 2222, 222222);
             //ac[2] = new Account(3000, 3333, 333333);
-            CentralComp.setupCentralComp();
             InitializeComponent();
             StartScreen();
         }
 
-        private void ThreadProc()
-        {
-            if (InvokeRequired)
-            {
-                this.Invoke(new Action(() => CreateAndShowForm()));
-                return;
-            }
+        //private void ThreadProc()
+        //{
+        //    if (InvokeRequired)
+        //    {
+        //        this.Invoke(new Action(() => CreateAndShowForm()));
+        //        return;
+        //    }
 
-            CreateAndShowForm();
-        }
+        //    CreateAndShowForm();
+        //}
 
         public static void CreateAndShowForm()
         {
@@ -87,6 +89,10 @@ namespace ThreadATM
             Box.Width = 130;
             Controls.Add(Box);
 
+            dataRaceCheck.Location = new Point(200, 500);
+            dataRaceCheck.Text = "Show Data Race Condition?";
+            Controls.Add(dataRaceCheck);
+            
             keypad();
         }
 
@@ -124,6 +130,7 @@ namespace ThreadATM
 
             else if (((Button)sender).Text == "Enter")
             {
+                showDataRace = dataRaceCheck.Checked;
                 if (AccountFound == false)
                 {
                     switch(Box.Text)
@@ -219,15 +226,20 @@ namespace ThreadATM
 
         private void Withdraw_Click(object sender, EventArgs e)
         {
-            activeAccount = CentralComp.getAccount(activeAccount.getAccountNum());
+            //if (!showDataRace)
+            //{
+            //    sem.WaitOne();
+            //}
+            activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
             withdrawScreen();
+            
         }
 
         private void Balance_Click(object sender, EventArgs e)
         {
             Controls.Clear();
             keypad();
-            activeAccount = CentralComp.getAccount(activeAccount.getAccountNum());
+            activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
 
             Label display = new Label();
             display.Location = new Point(110, 100);
@@ -260,10 +272,10 @@ namespace ThreadATM
             StartScreen();
         }
 
-        private int showBalance()
-        {
-            return activeAccount.getBalance();
-        }
+        //private int showBalance()
+        //{
+        //    return activeAccount.getBalance();
+        //}
 
         public void withdrawScreen()
         {
@@ -308,8 +320,17 @@ namespace ThreadATM
         {
             if (activeAccount.getBalance() > int.Parse(((Button)sender).Name))
             {
+                if (!showDataRace)
+                {
+                    sem.WaitOne();
+                    activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
+                }
                 activeAccount.decrementBalance(int.Parse(((Button)sender).Name));
                 CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
+                if (!showDataRace)
+                {
+                    sem.Release();
+                }
                 options();
             }
             else
@@ -325,6 +346,7 @@ namespace ThreadATM
 
         static void Main()
         {
+            CentralComp.setupCentralComp();
             ATM2.Start();
             Application.Run(new ATM());
         }
@@ -401,7 +423,7 @@ namespace ThreadATM
             return accountNum;
         }
 
-        public int getPIN()
+        internal int getPIN()
         {
             return pin;
         }
@@ -436,6 +458,18 @@ namespace ThreadATM
                 }
             }
             return null;
+        }
+
+        public static int getBalance(int acNum)
+        {
+            for (int i = 0; i < ac.Length; i++)
+            {
+                if (ac[i].getAccountNum() == acNum)
+                {
+                    return ac[i].getBalance();
+                }
+            }
+            return 0;
         }
 
         public static void updateAccount(int accNum, int newBalance)
