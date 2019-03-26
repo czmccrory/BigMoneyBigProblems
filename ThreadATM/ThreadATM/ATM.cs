@@ -14,7 +14,7 @@ namespace ThreadATM
     
     public partial class ATM : Form
     {
-        private Account[] ac = new Account[3];
+        //private Account[] ac = new Account[3];
 
         private Account activeAccount = null;
 
@@ -38,9 +38,9 @@ namespace ThreadATM
 
         public ATM()
         {
-            ac[0] = new Account(300, 1111, 111111);
-            ac[1] = new Account(750, 2222, 222222);
-            ac[2] = new Account(3000, 3333, 333333);
+            //ac[0] = new Account(300, 1111, 111111);
+            //ac[1] = new Account(750, 2222, 222222);
+            //ac[2] = new Account(3000, 3333, 333333);
             CentralComp.setupCentralComp();
             InitializeComponent();
             StartScreen();
@@ -170,19 +170,19 @@ namespace ThreadATM
             else { Box.Text += ((Button)sender).Text; }
         }
 
-        private Account findAccount(int input)
-        {
+        //private Account findAccount(int input)
+        //{
 
-            for (int i = 0; i < this.ac.Length; i++)
-            {
-                if (ac[i].getAccountNum() == input)
-                {
-                    return ac[i];
-                }
-            }
+        //    for (int i = 0; i < this.ac.Length; i++)
+        //    {
+        //        if (ac[i].getAccountNum() == input)
+        //        {
+        //            return ac[i];
+        //        }
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
         public void options()
         {
@@ -219,6 +219,7 @@ namespace ThreadATM
 
         private void Withdraw_Click(object sender, EventArgs e)
         {
+            activeAccount = CentralComp.getAccount(activeAccount.getAccountNum());
             withdrawScreen();
         }
 
@@ -226,11 +227,12 @@ namespace ThreadATM
         {
             Controls.Clear();
             keypad();
+            activeAccount = CentralComp.getAccount(activeAccount.getAccountNum());
 
             Label display = new Label();
             display.Location = new Point(110, 100);
             display.Font = new Font("Ariel", 10);
-            display.Text = "Balance: £" + (showBalance()).ToString();
+            display.Text = "Balance: £" + (activeAccount.getBalance().ToString());
             Controls.Add(display);
 
             Button goBack = new Button();
@@ -253,6 +255,8 @@ namespace ThreadATM
         private void Cancel_Click(object sender, EventArgs e)
         {
             Controls.Clear();
+            CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
+            activeAccount = null;
             StartScreen();
         }
 
@@ -304,8 +308,8 @@ namespace ThreadATM
         {
             if (activeAccount.getBalance() > int.Parse(((Button)sender).Name))
             {
-                int subtraction = activeAccount.getBalance() - int.Parse(((Button)sender).Name);
-                activeAccount.setBalance(subtraction);
+                activeAccount.decrementBalance(int.Parse(((Button)sender).Name));
+                CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
                 options();
             }
             else
@@ -397,6 +401,10 @@ namespace ThreadATM
             return accountNum;
         }
 
+        public int getPIN()
+        {
+            return pin;
+        }
     }
 
     class CentralComp
@@ -424,17 +432,17 @@ namespace ThreadATM
             {
                 if (ac[i].getAccountNum() == acNum)
                 {
-                    return ac[i];
+                    return new Account(ac[i].getBalance(), ac[i].getPIN(), ac[i].getAccountNum());
                 }
             }
             return null;
         }
 
-        public static void updateBalance(Account accToUpdate, int newBalance)
+        public static void updateAccount(int accNum, int newBalance)
         {
             for (int i = 0; i < ac.Length; i++)
             {
-                if (ac[i] == accToUpdate)
+                if (ac[i].getAccountNum() == accNum)
                 {
                     ac[i].setBalance(newBalance);
                     return;
