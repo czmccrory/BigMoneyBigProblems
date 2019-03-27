@@ -8,19 +8,24 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
+using System.Timers;
 
 namespace ThreadATM
 {
     
     public partial class ATM : Form
     {
-        //private Account[] ac = new Account[3];
+        System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+        int yfinal = 450;
 
         private Account activeAccount = null;
 
         int currentAccountNumber;
         bool AccountFound = false;
         bool showDataRace = false;
+        bool otherClicked = false;
+        bool depositClicked = false;
+        bool changePinClicked = false;
 
         static Thread ATM1 = new Thread(new ThreadStart(CreateAndShowForm));
         static Thread ATM2 = new Thread(new ThreadStart(CreateAndShowForm));
@@ -32,13 +37,18 @@ namespace ThreadATM
         PictureBox BankGif = new PictureBox();
         Button[,] grid = new Button[3, 4];
         CheckBox dataRaceCheck = new CheckBox();
+        PictureBox cardGif = new PictureBox();
+        int pinTried = 0;
 
         //options screen
-        Button[] optionButton = new Button[3];
+        Button[,] optionButton = new Button[2,3];
+        TextBox depositTextBox = new TextBox();
 
         //withdraw screen objects
         Button[,] withdrawOptions = new Button[2, 3];
-        
+        PictureBox bill = new PictureBox();
+        TextBox otherTextBox = new TextBox();
+
         public ATM()
         {
             //ac[0] = new Account(300, 1111, 111111);
@@ -67,32 +77,45 @@ namespace ThreadATM
 
         public void StartScreen()
         {
-            //adds gif
-            BankGif.SizeMode = PictureBoxSizeMode.StretchImage;
-            BankGif.Size = new Size(350, 200);
-            BankGif.Location = new Point(0, 0);
-            BankGif.Image = Image.FromFile("BOA.GIF");
-            Controls.Add(BankGif);
+            Controls.Clear();
+
+            //textbox          
+            Box.Location = new Point(160, 250);
+            Box.TextAlign = HorizontalAlignment.Center;
+            Box.Height = 100;
+            Box.Width = 60;
+            Box.BringToFront();
+            Controls.Add(Box);
 
             //text
             askUser.AutoSize = true;
-            askUser.Location = new Point(80, 200);
+            askUser.Location = new Point(100, 230);
             askUser.ForeColor = Color.DarkBlue;
             askUser.Font = new Font("Franklin Gothic", 8);
             askUser.Text = "Please enter your account number";
             Controls.Add(askUser);
 
-            //textbox -had to initialise out method for the event handler, try and fix?           
-            Box.Location = new Point(100, 230);
-            Box.TextAlign = HorizontalAlignment.Center;
-            Box.Height = 40;
-            Box.Width = 130;
-            Controls.Add(Box);
+            //adds gif
+            BankGif.SizeMode = PictureBoxSizeMode.StretchImage;
+            BankGif.Size = new Size(272, 200);
+            BankGif.Location = new Point(60, 80);
+            BankGif.Image = Image.FromFile("BOA.GIF");
+            BankGif.SendToBack();
+            Controls.Add(BankGif);
 
-            dataRaceCheck.Location = new Point(200, 500);
+            //entering card
+            cardGif.SizeMode = PictureBoxSizeMode.StretchImage;
+            cardGif.Size = new Size(60, 120);
+            cardGif.Location = new Point(290, 370);
+            cardGif.Image = Image.FromFile("card.GIF");
+            Controls.Add(cardGif);
+
+            //check box
+            dataRaceCheck.Location = new Point(0,0);
+            dataRaceCheck.Size = new Size(165, 20);
             dataRaceCheck.Text = "Show Data Race Condition?";
             Controls.Add(dataRaceCheck);
-            
+
             keypad();
         }
 
@@ -106,75 +129,163 @@ namespace ThreadATM
                 {
                     //Setting the characteristics for the buttons in the grid                
                     grid[x, y] = new Button();
-                    grid[x, y].SetBounds((55 * x) + 85, (55 * y) + 220 + 40, 50, 50);
-                    grid[x, y].BackColor = Color.LightGray;
-                    grid[x, y].TabStop = false;
+                    grid[x, y].SetBounds((48 * x) + 124, (45 * y) + 260 + 40, 50, 47);
                     grid[x, y].FlatStyle = FlatStyle.Flat;
-                    grid[x, y].FlatAppearance.BorderSize = 1;
-                    grid[x, y].Text = "" + num;
+                    grid[x, y].TabStop = false;
+                    grid[x, y].Name = "" + num;
                     grid[x, y].MouseDown += new MouseEventHandler(this.gridEvent_MouseDown);
                     num++;
                     Controls.Add(grid[x, y]);
                 }
             }
-            grid[0, 3].Text = "Clear";
-            grid[0, 3].BackColor = Color.Yellow;
-            grid[1, 3].Text = "0";
-            grid[2, 3].Text = "Enter";
-            grid[2, 3].BackColor = Color.Green;
+            grid[0, 0].BackgroundImage = Image.FromFile("1.jpg");
+            grid[0, 0].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[1, 0].BackgroundImage = Image.FromFile("2.jpg");
+            grid[1, 0].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[2, 0].BackgroundImage = Image.FromFile("3.jpg");
+            grid[2, 0].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[0, 1].BackgroundImage = Image.FromFile("4.jpg");
+            grid[0, 1].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[1, 1].BackgroundImage = Image.FromFile("5.jpg");
+            grid[1, 1].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[2, 1].BackgroundImage = Image.FromFile("6.jpg");
+            grid[2, 1].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[0, 2].BackgroundImage = Image.FromFile("7.jpg");
+            grid[0, 2].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[1, 2].BackgroundImage = Image.FromFile("8.jpg");
+            grid[1, 2].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[2, 2].BackgroundImage = Image.FromFile("9.jpg");
+            grid[2, 2].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[0, 3].BackgroundImage = Image.FromFile("Clear.jpg");
+            grid[0, 3].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[1, 3].BackgroundImage = Image.FromFile("0.jpg");
+            grid[1, 3].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[2, 3].BackgroundImage = Image.FromFile("Enter.jpg");
+            grid[2, 3].BackgroundImageLayout = ImageLayout.Stretch;
+            grid[0, 3].Name = "Clear";
+            grid[1, 3].Name = "0";
+            grid[2, 3].Name = "Enter";
         }
 
         private void gridEvent_MouseDown(object sender, MouseEventArgs e)
         {
-            if (((Button)sender).Text == "Clear") { Box.Text = String.Empty; }
-
-            else if (((Button)sender).Text == "Enter")
+            if (otherClicked == false && depositClicked == false)
             {
-                showDataRace = dataRaceCheck.Checked;
-                if (AccountFound == false)
+                if (((Button)sender).Name == "Clear") { Box.Text = String.Empty; }
+
+                else if (((Button)sender).Name == "Enter")
                 {
-                    switch(Box.Text)
+                    showDataRace = dataRaceCheck.Checked;
+                    if (AccountFound == false)
                     {
-                        case "":
-                            break;
-                        default:
-                            activeAccount = CentralComp.getAccount(int.Parse(Box.Text));//findAccount(int.Parse(Box.Text));
-                            break;
+                        switch (Box.Text)
+                        {
+                            case "":
+                                break;
+                            default:
+                                activeAccount = CentralComp.getAccount(int.Parse(Box.Text));
+                                break;
+                        }
+
+                        Box.Text = String.Empty;
+
+                        if (activeAccount != null)
+                        {
+                            currentAccountNumber = activeAccount.getAccountNum();
+                            AccountFound = true;
+                            Box.Text = string.Empty;
+                            askUser.Text = "Please enter your pin number";
+                        }
+                        else
+                        {
+                            askUser.Text = "Incorrect account number, please try again";
+                            Box.Text = String.Empty;
+                        }
                     }
-                    
+
+                    else
+                    {
+                        if (Box.Text == "")
+                        {
+                            pinTried++;
+                            askUser.Text = "Incorrect pin number, you have " + (3 - pinTried) + " guesses left";
+                            Box.Text = String.Empty;
+                        }
+                        else if (activeAccount.checkPin(int.Parse(Box.Text)))
+                        {
+                            Box.Text = String.Empty;
+                            AccountFound = false;
+                            options();
+                        }
+                        else
+                        {
+                            pinTried++;
+                            askUser.Text = "Incorrect pin number, you have " + (3 - pinTried) + " guesses left";
+                            Box.Text = String.Empty;
+                        }
+                        if (pinTried > 2)
+                        {
+                            pinTried = 0;
+                            Box.Text = String.Empty;
+                            AccountFound = false;
+                            activeAccount = null;
+                            StartScreen();
+                            askUser.Text = "card declined, Enter account number";
+
+                        }
+                    }
+                }
+
+                else { Box.Text += ((Button)sender).Name; }
+            }
+            else if (otherClicked == true)
+            {
+                if (((Button)sender).Name == "Clear") { Box.Text = string.Empty; }
+
+                else if (((Button)sender).Name == "Enter")
+                {
+                    if (!showDataRace)
+                    {
+                        sem.WaitOne();
+                        activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
+                    }
+                    activeAccount.decrementBalance(int.Parse(Box.Text));
+                    CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
+                    Controls.Clear();
                     Box.Text = String.Empty;
 
-                    if (activeAccount != null)
+                    if (!showDataRace)
                     {
-                        currentAccountNumber = activeAccount.getAccountNum();
-                        AccountFound = true;
-                        Box.Text = string.Empty;
-                        askUser.Text = "Please enter your pin number";
+                        sem.Release();
                     }
-                    else
-                    {
-                        askUser.Text = "Incorrect account number, please try again";
-                        Box.Text = String.Empty;
-                    }
-                }
 
-                else
-                {
-                    if (activeAccount.checkPin(int.Parse(Box.Text)))
-                    {
-                        Box.Text = String.Empty;
-                        AccountFound = false;
-                        options();
-                    }
-                    else
-                    {
-                        askUser.Text = "Incorrect pin number, please try again";
-                        Box.Text = String.Empty;
-                    }
+                    options();
                 }
+                else { Box.Text += ((Button)sender).Name; }
             }
+            else if (depositClicked == true)
+            {
+                if (((Button)sender).Name == "Clear") { Box.Text = string.Empty; }
 
-            else { Box.Text += ((Button)sender).Text; }
+                else if (((Button)sender).Name == "Enter")
+                {
+                    showDataRace = dataRaceCheck.Checked;
+                    activeAccount.incrementBalance(int.Parse(Box.Text));
+                    CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
+                    Controls.Clear();
+                    Box.Text = String.Empty;
+                    options();
+                }
+                else { Box.Text += ((Button)sender).Name; }
+            }
+            else if (changePinClicked == true)
+            {
+                showDataRace = dataRaceCheck.Checked;
+                activeAccount.setPin(int.Parse(Box.Text));
+                Controls.Clear();
+                Box.Text = String.Empty;
+                options();
+            }
         }
 
         //private Account findAccount(int input)
@@ -196,31 +307,34 @@ namespace ThreadATM
             Controls.Clear();
             keypad();
 
-            int vertical = 30;
             for (int x = 0; x < optionButton.GetLength(0); x++)
             {
-                optionButton[x] = new Button();
-                optionButton[x].Location = new Point(105, vertical);
-                optionButton[x].Size = new Size(120, 50);
-                optionButton[x].BackColor = Color.LightGray;
-                optionButton[x].FlatStyle = FlatStyle.Flat;
-                switch (x)
+                for (int y = 0; y < optionButton.GetLength(1); y++)
                 {
-                    case 0:
-                        optionButton[0].Text = "Withdraw";
-                        optionButton[x].Click += new EventHandler(Withdraw_Click);
-                        break;
-                    case 1:
-                        optionButton[1].Text = "Balance";
-                        optionButton[x].Click += new EventHandler(Balance_Click);
-                        break;
-                    case 2:
-                        optionButton[2].Text = "Cancel";
-                        optionButton[x].Click += new EventHandler(Cancel_Click);
-                        break;
+                    optionButton[x,y] = new Button();
+                    optionButton[x,y].SetBounds((160 * x) + 60, (30 * y) + 160 + 40, 100, 20);
+                    optionButton[x,y].BackColor = Color.LightGray;
+                    optionButton[x,y].FlatStyle = FlatStyle.Flat;
+                    switch (y)
+                    {
+                        case 0:
+                            optionButton[x, y].Text = "Withdraw";
+                            optionButton[x, y].Click += new EventHandler(Withdraw_Click);
+                            if (x == 1) { optionButton[x, y].Text = "Balance"; optionButton[x, y].Click += new EventHandler(Balance_Click); }
+                            break;
+                        case 1:
+                            optionButton[x, y].Text = "Deposit";
+                            optionButton[x, y].Click += new EventHandler(Deposit_Click);
+                            if (x == 1) { optionButton[x, y].Text = "Change Pin"; optionButton[x, y].Click += new EventHandler(ChangePin_Click); }
+                            break;
+                        case 2:
+                            optionButton[x, y].Text = "Cancel";
+                            optionButton[x, y].Click += new EventHandler(Cancel_Click);
+                            if (x == 1) { optionButton[x, y].Text = ""; }
+                            break;
+                    }
+                    Controls.Add(optionButton[x,y]);
                 }
-                Controls.Add(optionButton[x]);
-                vertical += 80;
             }
         }
 
@@ -257,6 +371,46 @@ namespace ThreadATM
             Controls.Add(goBack);
         }
 
+        private void Deposit_Click(object sender, EventArgs e)
+        {
+            depositClicked = true;
+            otherClicked = false;
+            changePinClicked = false;
+
+            Controls.Clear();
+            keypad();
+
+            askUser.Text = "Enter Amount Depositing";
+            askUser.Size = new Size(500, 300);
+            askUser.Location = new Point(120, 170);
+            Controls.Add(askUser);
+
+            Box.Height = 200;
+            Box.Width = 200;
+            Box.Location = new Point(90, 190);
+            Controls.Add(Box);
+        }
+
+        private void ChangePin_Click(object sender, EventArgs e)
+        {
+            depositClicked = false;
+            otherClicked = false;
+            changePinClicked = true;
+
+            Controls.Clear();
+            keypad();
+
+            askUser.Text = "Enter new pin";
+            askUser.Size = new Size(500, 300);
+            askUser.Location = new Point(50, 100);
+            Controls.Add(askUser);
+
+            Box.Height = 200;
+            Box.Width = 200;
+            Box.Location = new Point(75, 190);
+            Controls.Add(Box);
+        }
+
         private void goBack_Click(object sender, EventArgs e)
         {
             Controls.Clear();
@@ -281,33 +435,34 @@ namespace ThreadATM
         {
             Controls.Clear();
             keypad();
+
             for (int x = 0; x < withdrawOptions.GetLength(0); x++)
             {
                 for (int y = 0; y < withdrawOptions.GetLength(1); y++)
                 {
                     //Setting the characteristics for the buttons in the grid                
                     withdrawOptions[x, y] = new Button();
-                    withdrawOptions[x, y].SetBounds((220 * x) + 5, (80 * y) + 5 + 40, 100, 50);
+                    withdrawOptions[x, y].SetBounds((160 * x) + 60, (30 * y) + 160 + 40, 100, 20);
                     withdrawOptions[x, y].BackColor = Color.LightGray;
                     withdrawOptions[x, y].TabStop = false;
                     withdrawOptions[x, y].FlatStyle = FlatStyle.Flat;
                     withdrawOptions[x, y].FlatAppearance.BorderSize = 1;
-                    switch (y)
+                   switch (y)
                     {
                         case 0:
-                            withdrawOptions[x, y].Text = "£5";
-                            withdrawOptions[x, y].Name = "5";
-                            if (x == 1) { withdrawOptions[x, y].Text = "£40"; withdrawOptions[x, y].Name = "40"; }
-                            break;
-                        case 1:
                             withdrawOptions[x, y].Text = "£10";
                             withdrawOptions[x, y].Name = "10";
                             if (x == 1) { withdrawOptions[x, y].Text = "£100"; withdrawOptions[x, y].Name = "100"; }
                             break;
-                        case 2:
+                        case 1:
                             withdrawOptions[x, y].Text = "£20";
                             withdrawOptions[x, y].Name = "20";
                             if (x == 1) { withdrawOptions[x, y].Text = "£500"; withdrawOptions[x, y].Name = "500"; }
+                            break;
+                        case 2:
+                            withdrawOptions[x, y].Text = "£40";
+                            withdrawOptions[x, y].Name = "40";
+                            if (x == 1) { withdrawOptions[x, y].Text = "Other"; withdrawOptions[x, y].Name = "Other"; }
                             break;
                     }
                     withdrawOptions[x, y].MouseDown += new MouseEventHandler(this.withdrawOptionsEvent_MouseDown);
@@ -318,25 +473,71 @@ namespace ThreadATM
 
         private void withdrawOptionsEvent_MouseDown(object sender, MouseEventArgs e)
         {
-            if (activeAccount.getBalance() > int.Parse(((Button)sender).Name))
+            string buttonName = ((Button)sender).Name;
+
+            if (buttonName == "Other")
             {
-                if (!showDataRace)
-                {
-                    sem.WaitOne();
-                    activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
-                }
-                activeAccount.decrementBalance(int.Parse(((Button)sender).Name));
-                CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
-                if (!showDataRace)
-                {
-                    sem.Release();
-                }
-                options();
+                otherClicked = true;
+                depositClicked = false;
+                changePinClicked = false;
+                Controls.Clear();
+                keypad();
+
+                askUser.Text = "Enter amount";
+                askUser.Location = new Point(110, 100);
+                Controls.Add(askUser);
+
+                Box.Location = new Point(75, 190);
+                Box.Height = 200;
+                Box.Width = 200;
+                Controls.Add(Box);
             }
             else
             {
-                options();
+
+                if (activeAccount.getBalance() > int.Parse(((Button)sender).Name))
+                {
+                    if (!showDataRace)
+                    {
+                        sem.WaitOne();
+                        activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
+                    }
+                    activeAccount.decrementBalance(int.Parse(((Button)sender).Name));
+                    CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
+                    if (!showDataRace)
+                    {
+                        sem.Release();
+                    }
+
+                    bill.SizeMode = PictureBoxSizeMode.StretchImage;
+                    bill.Size = new Size(100, 200);
+                    bill.Location = new Point(20, 420);
+                    bill.Image = Image.FromFile("Bill.jpg");
+                    bill.SendToBack();
+                    Controls.Add(bill);
+
+                    timer.Interval = 100;
+                    timer.Tick += timer_Tick;
+                    timer.Enabled = true;
+                    timer.Start();
+                    Thread.Sleep(3000);
+                    //Task.Delay(5000).ContinueWith(t =>options());
+                }    
             }
+        }
+
+        void timer_Tick(object sender, EventArgs e)
+        {
+            MoveObject();
+        }
+
+        private void MoveObject()
+        {
+            int x = bill.Location.X;
+            int y = bill.Location.Y;
+            bill.Location = new Point(x, y+1);
+
+            if (y == yfinal) { timer.Stop(); options(); }
         }
 
         private void ATM_Load(object sender, EventArgs e)
@@ -399,6 +600,11 @@ namespace ThreadATM
             }
         }
 
+        public void incrementBalance(int amount)
+        {
+            this.balance += amount;
+        }
+
         /*
          * This funciton check the account pin against the argument passed to it
          *
@@ -427,19 +633,26 @@ namespace ThreadATM
         {
             return pin;
         }
+
+        public void setPin(int newPin)
+        {
+            pin = newPin;
+        }
     }
 
     class CentralComp
     {
 
         public static Account[] ac = new Account[3];
-        
+
         //public CentralComp()
         //{
         //    //ac[0] = new Account(300, 1111, 111111);
         //    //ac[1] = new Account(750, 2222, 222222);
         //    //ac[2] = new Account(3000, 3333, 333333);
         //}
+
+        
 
         public static void setupCentralComp()
         {
