@@ -48,3 +48,13 @@ C:\Users\Caoilainn\Desktop\Semester 2\Computer Systems 2B\BigMoneyBigProblems-ma
 C:\Users\Caoilainn\Desktop\Semester 2\Computer Systems 2B\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.csproj.CoreCompileInputs.cache
 C:\Users\Caoilainn\Desktop\Semester 2\Computer Systems 2B\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.exe
 C:\Users\Caoilainn\Desktop\Semester 2\Computer Systems 2B\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.pdb
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\bin\Debug\ThreadATM.exe.config
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\bin\Debug\ThreadATM.exe
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\bin\Debug\ThreadATM.pdb
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.csprojAssemblyReference.cache
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.ATM.resources
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.Properties.Resources.resources
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.csproj.GenerateResource.cache
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.csproj.CoreCompileInputs.cache
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.exe
+C:\Users\pturt\Downloads\BigMoneyBigProblems-master (1)\BigMoneyBigProblems-master\ThreadATM\ThreadATM\obj\Debug\ThreadATM.pdb

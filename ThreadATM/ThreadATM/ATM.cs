@@ -13,13 +13,19 @@ using System.Timers;
 namespace ThreadATM
 {
     
+    /*
+     * Class defining each ATM, contains the full functionality of the ATM and all the methods needed to present it to the user
+     */
     public partial class ATM : Form
     {
+        // Timer
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         int yfinal = 450;
 
+        // Local copy of the account being accessed
         private Account activeAccount = null;
 
+        // Fields needed to control aspects of the ATM
         int currentAccountNumber;
         bool AccountFound = false;
         bool showDataRace = false;
@@ -27,6 +33,7 @@ namespace ThreadATM
         bool depositClicked = false;
         bool changePinClicked = false;
 
+        // Thread objects
         static Thread ATM1 = new Thread(new ThreadStart(CreateAndShowForm));
         static Thread ATM2 = new Thread(new ThreadStart(CreateAndShowForm));
         static Semaphore sem = new Semaphore(1, 1);
@@ -49,32 +56,24 @@ namespace ThreadATM
         PictureBox bill = new PictureBox();
         TextBox otherTextBox = new TextBox();
 
+
+        // Default constructor for ATM objects
         public ATM()
         {
-            //ac[0] = new Account(300, 1111, 111111);
-            //ac[1] = new Account(750, 2222, 222222);
-            //ac[2] = new Account(3000, 3333, 333333);
             InitializeComponent();
             StartScreen();
         }
 
-        //private void ThreadProc()
-        //{
-        //    if (InvokeRequired)
-        //    {
-        //        this.Invoke(new Action(() => CreateAndShowForm()));
-        //        return;
-        //    }
-
-        //    CreateAndShowForm();
-        //}
-
+        
+        // Method to create a new form and new instance of the ATM
         public static void CreateAndShowForm()
         {
             var frm = new ATM();
             frm.ShowDialog();
         }
 
+
+        // Method to display the login screen
         public void StartScreen()
         {
             Controls.Clear();
@@ -119,6 +118,8 @@ namespace ThreadATM
             keypad();
         }
 
+
+        // Method for setting up the keypad, creating a 2D grid of buttons, setting their values, a common event handler, and their picture backgrounds
         public void keypad()
         {
             //KeyPad
@@ -167,12 +168,17 @@ namespace ThreadATM
             grid[2, 3].Name = "Enter";
         }
 
+
+        // Method for handling events after a user clicks on one of the buttons in a 2D grid.
+        // The methods called depend on the current status of the ATM, and what process the user is undertaking
         private void gridEvent_MouseDown(object sender, MouseEventArgs e)
         {
             if (otherClicked == false && depositClicked == false && changePinClicked == false)
             {
-                if (((Button)sender).Name == "Clear") { Box.Text = String.Empty; }
-
+                if (((Button)sender).Name == "Clear")
+                {
+                    Box.Text = String.Empty;
+                }
                 else if (((Button)sender).Name == "Enter")
                 {
                     showDataRace = dataRaceCheck.Checked;
@@ -255,8 +261,10 @@ namespace ThreadATM
                     if (!showDataRace)
                     {
                         sem.WaitOne();
-                        activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
+                        
                     }
+
+                    activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
 
                     if (int.Parse(Box.Text) > activeAccount.getBalance() || int.Parse(Box.Text) > 1000 || int.Parse(Box.Text) < 0)
                     {
@@ -367,20 +375,8 @@ namespace ThreadATM
             }
         }
 
-        //private Account findAccount(int input)
-        //{
 
-        //    for (int i = 0; i < this.ac.Length; i++)
-        //    {
-        //        if (ac[i].getAccountNum() == input)
-        //        {
-        //            return ac[i];
-        //        }
-        //    }
-
-        //    return null;
-        //}
-
+        // Method to display the main menu options to the user
         public void options()
         {
             Controls.Clear();
@@ -417,17 +413,17 @@ namespace ThreadATM
             }
         }
 
+
+        // Method to handle user clicking on withdraw option
         private void Withdraw_Click(object sender, EventArgs e)
         {
-            //if (!showDataRace)
-            //{
-            //    sem.WaitOne();
-            //}
             activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
             withdrawScreen();
             
         }
 
+
+        // Method to show user the balance of the account
         private void Balance_Click(object sender, EventArgs e)
         {
             Controls.Clear();
@@ -450,6 +446,8 @@ namespace ThreadATM
             Controls.Add(goBack);
         }
 
+
+        // Method to allow user to deposit funnds into the account
         private void Deposit_Click(object sender, EventArgs e)
         {
             depositClicked = true;
@@ -470,6 +468,8 @@ namespace ThreadATM
             Controls.Add(Box);
         }
 
+
+        // Method to allow user to change the PIN on their account
         private void ChangePin_Click(object sender, EventArgs e)
         {
             depositClicked = false;
@@ -490,6 +490,8 @@ namespace ThreadATM
             Controls.Add(Box);
         }
 
+
+        // Method to handle user clicking on 'go back' button
         private void goBack_Click(object sender, EventArgs e)
         {
             Controls.Clear();
@@ -497,6 +499,8 @@ namespace ThreadATM
             options();
         }
 
+
+        // Method to handle user clicking on 'cancel' button
         private void Cancel_Click(object sender, EventArgs e)
         {
             Controls.Clear();
@@ -504,12 +508,9 @@ namespace ThreadATM
             activeAccount = null;
             StartScreen();
         }
+        
 
-        //private int showBalance()
-        //{
-        //    return activeAccount.getBalance();
-        //}
-
+        // Method to display the withdraw screen, with 2D grid of buttons for appropriate options
         public void withdrawScreen()
         {
             Controls.Clear();
@@ -550,12 +551,15 @@ namespace ThreadATM
             }
         }
 
+
+        // Method to dictate what happens when a withdraw button is pressed
         private void withdrawOptionsEvent_MouseDown(object sender, MouseEventArgs e)
         {
             string buttonName = ((Button)sender).Name;
 
-            if (buttonName == "Other")
+            if (buttonName == "Other") // If 'other' button pressed then ask user to type in an amount
             {
+
                 otherClicked = true;
                 depositClicked = false;
                 changePinClicked = false;
@@ -570,24 +574,26 @@ namespace ThreadATM
                 Box.Height = 200;
                 Box.Width = 200;
                 Controls.Add(Box);
+
             }
-            else
+            else // Else get the amount on the button and debit the account by that amount
             {
 
                 if (activeAccount.getBalance() > int.Parse(((Button)sender).Name))
                 {
-                    if (!showDataRace)
+                    if (!showDataRace) // Toggle semaphore
                     {
                         sem.WaitOne();
                         activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
                     }
                     activeAccount.decrementBalance(int.Parse(((Button)sender).Name));
                     CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
-                    if (!showDataRace)
+                    if (!showDataRace) // Toggle semaphore
                     {
                         sem.Release();
                     }
 
+                    // Show bank note animation
                     bill.SizeMode = PictureBoxSizeMode.StretchImage;
                     bill.Size = new Size(100, 200);
                     bill.Location = new Point(20, 420);
@@ -605,11 +611,15 @@ namespace ThreadATM
             }
         }
 
+
+        // Method called every time the timer 'ticks', calls the move object method
         void timer_Tick(object sender, EventArgs e)
         {
             MoveObject();
         }
 
+
+        // Method for moving the bank notes down the screen incrementally
         private void MoveObject()
         {
             int x = bill.Location.X;
@@ -619,28 +629,42 @@ namespace ThreadATM
             if (y == yfinal) { timer.Stop(); options(); }
         }
 
+
         private void ATM_Load(object sender, EventArgs e)
         {
 
         }
 
+
+        // Main method for the program, creates a new instance of ATM
         static void Main()
         {
             CentralComp.setupCentralComp();
             ATM2.Start();
             Application.Run(new ATM());
         }
+
+
     }
 
+
+
+    /* 
+     * Class defining Account objects, contains account information such as account number and balance.
+     * Contains methods to modify information stored in each Account object including balance and PIN
+     */
     class Account
     {
-        //the attributes for the account
+        
+        
+        // The attributes for the account
         private int balance;
         private int pin;
         private int accountNum;
         private bool blocked;
 
-        // a constructor that takes initial values for each of the attributes (balance, pin, accountNumber)
+
+        // A constructor that takes initial values for each of the attributes (balance, pin, accountNumber, blocked)
         public Account(int balance, int pin, int accountNum, bool blocked)
         {
             this.balance = balance;
@@ -649,33 +673,41 @@ namespace ThreadATM
             this.blocked = blocked;
         }
 
+
+        // Method for returning the blocked status of an account
         public bool getBlocked()
         {
             return blocked;
         }
 
+
+        // Method for blocking an account
         public void setBlocked()
         {
             this.blocked = true;
         }
 
-        //getter and setter functions for balance
+
+        // Getter method for balance
         public int getBalance()
         {
             return balance;
         }
+
+
+        // Setter method for balance
         public void setBalance(int newBalance)
         {
             this.balance = newBalance;
         }
 
+
         /*
-         *   This funciton allows us to decrement the balance of an account
-         *   it perfomes a simple check to ensure the balance is greater tha
-         *   the amount being debeted
+         *   This function allows us to decrement the balance of an account
+         *   it checks to ensure the balance is greater than the amount being debited
          *   
-         *   reurns:
-         *   true if the transactions if possible
+         *   returns:
+         *   true if the transactions is successful
          *   false if there are insufficent funds in the account
          */
         public Boolean decrementBalance(int amount)
@@ -691,13 +723,16 @@ namespace ThreadATM
             }
         }
 
+
+        // Method for incrementing the balance of an account
         public void incrementBalance(int amount)
         {
             this.balance += amount;
         }
 
+
         /*
-         * This funciton check the account pin against the argument passed to it
+         * This function checks the account pin against the argument passed to it
          *
          * returns:
          * true if they match
@@ -715,36 +750,42 @@ namespace ThreadATM
             }
         }
 
+
+        // Method for getting the account number of the current account
         public int getAccountNum()
         {
             return accountNum;
         }
 
+
+        // Method for getting the account's PIN
         internal int getPIN()
         {
             return pin;
         }
 
+
+        // Method for setting a new PIN to an account
         public void setPin(int newPin)
         {
             pin = newPin;
         }
+
     }
 
+
+
+    /*
+     * Class containing all the accounts that can be accessed by the ATM, and methods for accessing/modifying them 
+     */
     class CentralComp
     {
 
-        public static Account[] ac = new Account[3];
 
-        //public CentralComp()
-        //{
-        //    //ac[0] = new Account(300, 1111, 111111);
-        //    //ac[1] = new Account(750, 2222, 222222);
-        //    //ac[2] = new Account(3000, 3333, 333333);
-        //}
-
+        public static Account[] ac = new Account[3]; // Field for all the accounts to be stored
         
 
+        // Method to initialise all the accounts with the correct values, only called when the program first starts
         public static void setupCentralComp()
         {
             ac[0] = new Account(300, 1111, 111111, false);
@@ -752,18 +793,27 @@ namespace ThreadATM
             ac[2] = new Account(3000, 3333, 333333, false);
         }
 
+
+        /*
+         * Method for finding an account using its account number and returning a copy of the account object.
+         * Returns:
+         * A copy of account object if matching account found
+         * Null if no matching account is found
+         */
         public static Account getAccount(int acNum)
         {
             for (int i = 0; i < ac.Length; i++)
             {
                 if (ac[i].getAccountNum() == acNum)
                 {
-                    return new Account(ac[i].getBalance(), ac[i].getPIN(), ac[i].getAccountNum(), ac[i].getBlocked());
+                    return new Account(ac[i].getBalance(), ac[i].getPIN(), ac[i].getAccountNum(), ac[i].getBlocked()); // Return a copy of the account object
                 }
             }
-            return null;
+            return null; // If no matching account number found, return null
         }
 
+
+        // Method for getting the balance of the current account in use, found by account number
         public static int getBalance(int acNum)
         {
             for (int i = 0; i < ac.Length; i++)
@@ -776,6 +826,8 @@ namespace ThreadATM
             return 0;
         }
 
+
+        // Method for updating an accounts balance using account number and the new balance
         public static void updateAccount(int accNum, int newBalance)
         {
             for (int i = 0; i < ac.Length; i++)
@@ -788,6 +840,8 @@ namespace ThreadATM
             }
         }
 
+
+        // Method for updating an accounts PIN using account number and the new PIN
         public static void updatePin(int accNum, int newPin)
         {
             for (int i = 0; i < ac.Length; i++)
@@ -800,6 +854,8 @@ namespace ThreadATM
             }
         }
 
+
+        // Method for blocking an account, called if there are too many failed attempts of entering the PIN
         internal static void blockAccount(int accToBlock)
         {
             for (int i = 0; i < ac.Length; i++)
