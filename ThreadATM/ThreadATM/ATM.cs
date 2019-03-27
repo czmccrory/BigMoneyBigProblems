@@ -169,7 +169,7 @@ namespace ThreadATM
 
         private void gridEvent_MouseDown(object sender, MouseEventArgs e)
         {
-            if (otherClicked == false && depositClicked == false)
+            if (otherClicked == false && depositClicked == false && changePinClicked == false)
             {
                 if (((Button)sender).Name == "Clear") { Box.Text = String.Empty; }
 
@@ -191,10 +191,17 @@ namespace ThreadATM
 
                         if (activeAccount != null)
                         {
-                            currentAccountNumber = activeAccount.getAccountNum();
-                            AccountFound = true;
-                            Box.Text = string.Empty;
-                            askUser.Text = "Please enter your pin number";
+                            if(activeAccount.getBlocked() == true)
+                            {
+                                askUser.Text = "Card is blocked. Please enter another account number.";
+                            }
+                            else
+                            {
+                                currentAccountNumber = activeAccount.getAccountNum();
+                                AccountFound = true;
+                                Box.Text = string.Empty;
+                                askUser.Text = "Please enter your pin number.";
+                            }
                         }
                         else
                         {
@@ -225,12 +232,13 @@ namespace ThreadATM
                         }
                         if (pinTried > 2)
                         {
+                            CentralComp.blockAccount(activeAccount.getAccountNum());
                             pinTried = 0;
                             Box.Text = String.Empty;
                             AccountFound = false;
                             activeAccount = null;
                             StartScreen();
-                            askUser.Text = "card declined, Enter account number";
+                            askUser.Text = "Card blocked. Enter a different account number.";
 
                         }
                     }
@@ -249,17 +257,38 @@ namespace ThreadATM
                         sem.WaitOne();
                         activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
                     }
-                    activeAccount.decrementBalance(int.Parse(Box.Text));
-                    CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
-                    Controls.Clear();
-                    Box.Text = String.Empty;
+
+                    if (int.Parse(Box.Text) > activeAccount.getBalance() || int.Parse(Box.Text) > 1000 || int.Parse(Box.Text) < 0)
+                    {
+                        if (int.Parse(Box.Text) > 1000 || int.Parse(Box.Text) < 0)
+                        {
+                            askUser.Text = "Amount must be within range (£0-£1000).\nPlease enter new amount.";
+                            askUser.Size = new Size(500, 300);
+                            askUser.Location = new Point(50, 100);
+                            Box.Text = String.Empty;
+                        }
+                        else
+                        {
+                            askUser.Text = "Insufficient funds. Your balance is: £" + activeAccount.getBalance() + "\nPlease enter new amount.";
+                            askUser.Size = new Size(500, 300);
+                            askUser.Location = new Point(50, 100);
+                            Box.Text = String.Empty;
+                        }
+                    }
+                    else
+                    {
+                        activeAccount.decrementBalance(int.Parse(Box.Text));
+                        CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
+                        Thread.Sleep(3000);
+                        Controls.Clear();
+                        Box.Text = String.Empty;
+                        options();
+                    }
 
                     if (!showDataRace)
                     {
                         sem.Release();
                     }
-
-                    options();
                 }
                 else { Box.Text += ((Button)sender).Name; }
             }
@@ -269,22 +298,72 @@ namespace ThreadATM
 
                 else if (((Button)sender).Name == "Enter")
                 {
-                    showDataRace = dataRaceCheck.Checked;
-                    activeAccount.incrementBalance(int.Parse(Box.Text));
-                    CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
-                    Controls.Clear();
-                    Box.Text = String.Empty;
-                    options();
+                    if (!showDataRace)
+                    {
+                        sem.WaitOne();
+                        activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
+                    }
+
+                    if (int.Parse(Box.Text) > 250 || int.Parse(Box.Text) < 0)
+                    {
+                        askUser.Text = "Amount must be within range (£0-£250).\nPlease enter new amount.";
+                        askUser.Size = new Size(500, 300);
+                        askUser.Location = new Point(50, 100);
+                        Box.Text = String.Empty;
+                    }
+                    else
+                    {
+                        activeAccount.incrementBalance(int.Parse(Box.Text));
+                        CentralComp.updateAccount(activeAccount.getAccountNum(), activeAccount.getBalance());
+                        Thread.Sleep(3000);
+                        Controls.Clear();
+                        Box.Text = String.Empty;
+                        options();
+                    }
+
+                    if (!showDataRace)
+                    {
+                        sem.Release();
+                    }
                 }
                 else { Box.Text += ((Button)sender).Name; }
             }
             else if (changePinClicked == true)
             {
-                showDataRace = dataRaceCheck.Checked;
-                activeAccount.setPin(int.Parse(Box.Text));
-                Controls.Clear();
-                Box.Text = String.Empty;
-                options();
+                if (((Button)sender).Name == "Clear") { Box.Text = string.Empty; }
+
+                else if (((Button)sender).Name == "Enter")
+                {
+                    if (!showDataRace)
+                    {
+                        sem.WaitOne();
+                        activeAccount.setBalance(CentralComp.getBalance(activeAccount.getAccountNum()));
+                    }
+
+                    if (Box.Text.Length > 4)
+                    {
+                        askUser.Text = "Pin must be 4 characters long.\nPlease try again.";
+                        askUser.Size = new Size(500, 300);
+                        askUser.Location = new Point(50, 100);
+                        Box.Text = String.Empty;
+                    }
+                    else
+                    {
+                        CentralComp.updatePin(activeAccount.getAccountNum(), int.Parse(Box.Text));
+                        Controls.Clear();
+                        Box.Text = String.Empty;
+                        StartScreen();
+                        activeAccount = null;
+                        changePinClicked = false;
+                        pinTried = 0;
+                    }
+
+                    if (!showDataRace)
+                    {
+                        sem.Release();
+                    }
+                }
+                else { Box.Text += ((Button)sender).Name; }
             }
         }
 
@@ -330,7 +409,7 @@ namespace ThreadATM
                         case 2:
                             optionButton[x, y].Text = "Cancel";
                             optionButton[x, y].Click += new EventHandler(Cancel_Click);
-                            if (x == 1) { optionButton[x, y].Text = ""; }
+                            if (x == 1) { optionButton[x, y].Text = ""; optionButton[x, y].Hide(); }
                             break;
                     }
                     Controls.Add(optionButton[x,y]);
@@ -559,13 +638,25 @@ namespace ThreadATM
         private int balance;
         private int pin;
         private int accountNum;
+        private bool blocked;
 
         // a constructor that takes initial values for each of the attributes (balance, pin, accountNumber)
-        public Account(int balance, int pin, int accountNum)
+        public Account(int balance, int pin, int accountNum, bool blocked)
         {
             this.balance = balance;
             this.pin = pin;
             this.accountNum = accountNum;
+            this.blocked = blocked;
+        }
+
+        public bool getBlocked()
+        {
+            return blocked;
+        }
+
+        public void setBlocked()
+        {
+            this.blocked = true;
         }
 
         //getter and setter functions for balance
@@ -656,9 +747,9 @@ namespace ThreadATM
 
         public static void setupCentralComp()
         {
-            ac[0] = new Account(300, 1111, 111111);
-            ac[1] = new Account(750, 2222, 222222);
-            ac[2] = new Account(3000, 3333, 333333);
+            ac[0] = new Account(300, 1111, 111111, false);
+            ac[1] = new Account(750, 2222, 222222, false);
+            ac[2] = new Account(3000, 3333, 333333, false);
         }
 
         public static Account getAccount(int acNum)
@@ -667,7 +758,7 @@ namespace ThreadATM
             {
                 if (ac[i].getAccountNum() == acNum)
                 {
-                    return new Account(ac[i].getBalance(), ac[i].getPIN(), ac[i].getAccountNum());
+                    return new Account(ac[i].getBalance(), ac[i].getPIN(), ac[i].getAccountNum(), ac[i].getBlocked());
                 }
             }
             return null;
@@ -692,6 +783,30 @@ namespace ThreadATM
                 if (ac[i].getAccountNum() == accNum)
                 {
                     ac[i].setBalance(newBalance);
+                    return;
+                }
+            }
+        }
+
+        public static void updatePin(int accNum, int newPin)
+        {
+            for (int i = 0; i < ac.Length; i++)
+            {
+                if (ac[i].getAccountNum() == accNum)
+                {
+                    ac[i].setPin(newPin);
+                    return;
+                }
+            }
+        }
+
+        internal static void blockAccount(int accToBlock)
+        {
+            for (int i = 0; i < ac.Length; i++)
+            {
+                if(ac[i].getAccountNum() == accToBlock)
+                {
+                    ac[i].setBlocked();
                     return;
                 }
             }
